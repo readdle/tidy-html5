@@ -28,18 +28,27 @@
 struct _tidy_option;
 typedef struct _tidy_option TidyOptionImpl;
 
+typedef struct PickListItem {
+    const char* label;
+    int value;
+    const char* inputs[10];
+} PickListItem;
+
+typedef PickListItem OptionPickList[];
+
 typedef Bool (ParseProperty)( TidyDocImpl* doc, const TidyOptionImpl* opt );
 
 struct _tidy_option
 {
     TidyOptionId        id;
-    TidyConfigCategory  category;   /* put 'em in groups */
-    ctmbstr             name;       /* property name */
-    TidyOptionType      type;       /* string, int or bool */
-    ulong               dflt;       /* default for TidyInteger and TidyBoolean */
-    ParseProperty*      parser;     /* parsing method, read-only if NULL */
-    const ctmbstr*      pickList;   /* pick list */
-    ctmbstr             pdflt;      /* default for TidyString */
+    TidyConfigCategory     category;        /* put 'em in groups */
+    ctmbstr                name;            /* property name */
+    TidyOptionType         type;            /* string, int or bool */
+    ulong                  dflt;            /* default for TidyInteger and TidyBoolean */
+    ParseProperty*         parser;          /* parsing method, read-only if NULL */
+    const ctmbstr*         oldPickList;     /* old style pick list */
+    ctmbstr                pdflt;           /* default for TidyString */
+    const OptionPickList*  pickList;        /* new style pick list */
 };
 
 typedef union
