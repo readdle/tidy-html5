@@ -475,16 +475,17 @@ ctmbstr TIDY_CALL       tidyOptGetEncName( TidyDoc tdoc, TidyOptionId optId )
 
 ctmbstr TIDY_CALL       tidyOptGetCurrPick( TidyDoc tdoc, TidyOptionId optId )
 {
-    const TidyOptionImpl* option = TY_(getOption)( optId );
-    if ( option && option->oldPickList )
-    {
-        uint ix, pick = tidyOptGetInt( tdoc, optId );
-        const ctmbstr* pL = option->oldPickList;
-        for ( ix=0; *pL && ix < pick; ++ix )
-            ++pL;
-        if ( *pL )
-            return *pL;
-    }
+// TODO: Fix this first!
+//    const TidyOptionImpl* option = TY_(getOption)( optId );
+//    if ( option && option->oldPickList )
+//    {
+//        uint ix, pick = tidyOptGetInt( tdoc, optId );
+//        const ctmbstr* pL = option->oldPickList;
+//        for ( ix=0; *pL && ix < pick; ++ix )
+//            ++pL;
+//        if ( *pL )
+//            return *pL;
+//    }
     return NULL;
 }
 

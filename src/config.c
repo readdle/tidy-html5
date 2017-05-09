@@ -1,22 +1,12 @@
-/*
-  config.c -- read config file and manage config properties
-  
-  (c) 1998-2008 (W3C) MIT, ERCIM, Keio University
-  See tidy.h for the copyright notice.
-
-  config files associate a property name with a value.
-
-  // comments can start at the beginning of a line
-  # comments can start at the beginning of a line
-  name: short values fit onto one line
-  name: a really long value that
-   continues on the next line
-
-  property names are case insensitive and should be less than
-  60 characters in length and must start at the begining of
-  the line, as whitespace at the start of a line signifies a
-  line continuation.
-*/
+/* config.c
+ * Read configuration files and manage configuration properties.
+ *
+ * Copyright (c) 1998-2017 World Wide Web Consortium (Massachusetts
+ * Institute of Technology, European Research Consortium for Informatics
+ * and Mathematics, Keio University) and HTACG.
+ *
+ * See tidy.h for the copyright notice.
+ */
 
 #include "config.h"
 #include "tidy-int.h"
@@ -56,91 +46,84 @@ void TY_(FreeConfig)( TidyDocImpl* doc )
 }
 
 
-/* Arrange so index can be cast to enum
+/* 
+   Arrange so index can be cast to enum
 */
-static const ctmbstr boolPicks[] = 
-{
-  "no",
-  "yes",
-  NULL
+static PickListItems boolPicks = {
+    { "no",  TidyNoState,  { "0", "n", "f", "no",  "false" } },
+    { "yes", TidyYesState, { "1", "y", "t", "yes", "true"  } },
+    NULL
 };
 
-static const ctmbstr autoBoolPicks[] = 
-{
-  "no",
-  "yes",
-  "auto",
-  NULL
+static PickListItems autoBoolPicks = {
+    { "no",   TidyNoState,  { "0", "n", "f", "no",  "false" } },
+    { "yes",  TidyYesState, { "1", "y", "t", "yes", "true"  } },
+    { "auto", TidyYesState, { "auto"                        } },
+    NULL
 };
 
-static const ctmbstr repeatAttrPicks[] = 
-{
-  "keep-first",
-  "keep-last",
-  NULL
+static PickListItems repeatAttrPicks = {
+    { "keep-first", TidyNoState,  { "keep-first" } },
+    { "keep-last",  TidyYesState, { "keep-last"  } },
+    NULL
 };
 
-static const ctmbstr accessPicks[] = 
-{
-  "0 (Tidy Classic)",
-  "1 (Priority 1 Checks)",
-  "2 (Priority 2 Checks)",
-  "3 (Priority 3 Checks)",
-  NULL
+static PickListItems accessPicks = {
+    { "0 (Tidy Classic)",      0, { "0", "0 (Tidy Classic)"     } },
+    { "1 (Priority 1 Checks)", 1, { "1", "1 (Priority 1 Checks)"} },
+    { "2 (Priority 2 Checks)", 2, { "2", "2 (Priority 2 Checks)"} },
+    { "3 (Priority 3 Checks)", 3, { "3", "3 (Priority 3 Checks)"} },
+    NULL
 };
 
-static const ctmbstr charEncPicks[] = 
-{
-  "raw",
-  "ascii",
-  "latin0",
-  "latin1",
-  "utf8",
+static PickListItems charEncPicks = {
+    { "raw",      TidyEncRaw,      { "raw"      } },
+    { "ascii",    TidyEncAscii,    { "ascii"    } },
+    { "latin0",   TidyEncLatin0,   { "latin0"   } },
+    { "latin1",   TidyEncLatin1,   { "latin1"   } },
+    { "utf8",     TidyEncUtf8,     { "utf8"     } },
 #ifndef NO_NATIVE_ISO2022_SUPPORT
-  "iso2022",
+    { "iso2022",  TidyEncIso2022,  { "iso2022"  } },
 #endif
-  "mac",
-  "win1252",
-  "ibm858",
+    { "mac",      TidyEncMac,      { "mac"      } },
+    { "win1252",  TidyEncWin1252,  { "win1252"  } },
+    { "ibm858",   TidyEncIbm858,   { "ibm858"   } },
 
 #if SUPPORT_UTF16_ENCODINGS
-  "utf16le",
-  "utf16be",
-  "utf16",
+    { "utf16le",  TidyEncUtf16le,  { "utf16le"  } },
+    { "utf16be",  TidyEncUtf16be,  { "utf16be"  } },
+    { "utf16",    TidyEncUtf16,    { "utf16"    } },
 #endif
 
 #if SUPPORT_ASIAN_ENCODINGS
-  "big5",
-  "shiftjis",
+    { "big5",     TidyEncBig5,     { "big5"     } },
+    { "shiftjis", TidyEncShiftjis, { "shiftjis" } },
 #endif
 
-  NULL
+    NULL
 };
 
-static const ctmbstr newlinePicks[] = 
-{
-  "LF",
-  "CRLF",
-  "CR",
-  NULL
+static PickListItems newlinePicks = {
+    { "LF",   TidyLF,   { "lf"   } },
+    { "CRLF", TidyCRLF, { "crlf" } },
+    { "CR",   TidyCR,   { "cr"   } },
+    NULL
 };
 
-static const ctmbstr doctypePicks[] = 
-{
-  "html5",
-  "omit",
-  "auto",
-  "strict",
-  "transitional",
-  "user",
-  NULL 
+static PickListItems doctypePicks = {
+    { "html5",        TidyDoctypeHtml5,  { "html5"        } },
+    { "omit",         TidyDoctypeOmit,   { "omit"         } },
+    { "auto",         TidyDoctypeAuto,   { "auto"         } },
+    { "strict",       TidyDoctypeStrict, { "strict"       } },
+    { "transitional", TidyDoctypeLoose,  { "transitional" } },
+    { "user",         TidyDoctypeUser,   { "user"         } },
+    NULL 
 };
-
-static const ctmbstr sorterPicks[] = 
-{
-  "none",
-  "alpha",
-  NULL
+        
+static PickListItems sorterPicks = {
+    { "none",  TidySortAttrNone,  { "none"  } },
+    { "alpha", TidySortAttrAlpha, { "alpha" } },
+    NULL
 };
 
 static PickListItems customTagsPicks = {
@@ -231,111 +214,111 @@ static ParseProperty ParseUseCustomTags;
 static const TidyOptionImpl option_defs[] =
 {
     { TidyUnknownOption,           MS, "unknown!",                    IN, 0,               NULL,              NULL            },
-    { TidyAccessibilityCheckLevel, DG, "accessibility-check",         IN, 0,               ParseAcc,          accessPicks     },
+    { TidyAccessibilityCheckLevel, DG, "accessibility-check",         IN, 0,               ParseAcc,          &accessPicks     },
     { TidyAltText,                 MU, "alt-text",                    ST, 0,               ParseString,       NULL            },
-    { TidyAnchorAsName,            MU, "anchor-as-name",              BL, yes,             ParseBool,         boolPicks       },
-    { TidyAsciiChars,              CE, "ascii-chars",                 BL, no,              ParseBool,         boolPicks       },
+    { TidyAnchorAsName,            MU, "anchor-as-name",              BL, yes,             ParseBool,         &boolPicks       },
+    { TidyAsciiChars,              CE, "ascii-chars",                 BL, no,              ParseBool,         &boolPicks       },
     { TidyBlockTags,               MU, "new-blocklevel-tags",         ST, 0,               ParseTagNames,     NULL            },
-    { TidyBodyOnly,                MU, "show-body-only",              IN, no,              ParseAutoBool,     autoBoolPicks   },
-    { TidyBreakBeforeBR,           PP, "break-before-br",             BL, no,              ParseBool,         boolPicks       },
-    { TidyCharEncoding,            CE, "char-encoding",               IN, UTF8,            ParseCharEnc,      charEncPicks    },
-    { TidyCoerceEndTags,           MU, "coerce-endtags",              BL, yes,             ParseBool,         boolPicks       },
+    { TidyBodyOnly,                MU, "show-body-only",              IN, no,              ParseAutoBool,     &autoBoolPicks   },
+    { TidyBreakBeforeBR,           PP, "break-before-br",             BL, no,              ParseBool,         &boolPicks       },
+    { TidyCharEncoding,            CE, "char-encoding",               IN, UTF8,            ParseCharEnc,      &charEncPicks    },
+    { TidyCoerceEndTags,           MU, "coerce-endtags",              BL, yes,             ParseBool,         &boolPicks       },
     { TidyCSSPrefix,               MU, "css-prefix",                  ST, 0,               ParseCSS1Selector, NULL            },
     { TidyCustomTags,              IR, "new-custom-tags",             ST, 0,               ParseTagNames,     NULL            }, /* 20170309 - Issue #119 */
-    { TidyDecorateInferredUL,      MU, "decorate-inferred-ul",        BL, no,              ParseBool,         boolPicks       },
-    { TidyDoctype,                 MU, "doctype",                     ST, 0,               ParseDocType,      doctypePicks    },
+    { TidyDecorateInferredUL,      MU, "decorate-inferred-ul",        BL, no,              ParseBool,         &boolPicks       },
+    { TidyDoctype,                 MU, "doctype",                     ST, 0,               ParseDocType,      &doctypePicks    },
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-    { TidyDoctypeMode,             IR, "doctype-mode",                IN, TidyDoctypeAuto, NULL,              doctypePicks    },
+    { TidyDoctypeMode,             IR, "doctype-mode",                IN, TidyDoctypeAuto, NULL,              &doctypePicks    },
 #endif
-    { TidyDropEmptyElems,          MU, "drop-empty-elements",         BL, yes,             ParseBool,         boolPicks       },
-    { TidyDropEmptyParas,          MU, "drop-empty-paras",            BL, yes,             ParseBool,         boolPicks       },
-    { TidyDropPropAttrs,           MU, "drop-proprietary-attributes", BL, no,              ParseBool,         boolPicks       },
-    { TidyDuplicateAttrs,          MU, "repeated-attributes",         IN, TidyKeepLast,    ParseRepeatAttr,   repeatAttrPicks },
-    { TidyEmacs,                   MS, "gnu-emacs",                   BL, no,              ParseBool,         boolPicks       },
+    { TidyDropEmptyElems,          MU, "drop-empty-elements",         BL, yes,             ParseBool,         &boolPicks       },
+    { TidyDropEmptyParas,          MU, "drop-empty-paras",            BL, yes,             ParseBool,         &boolPicks       },
+    { TidyDropPropAttrs,           MU, "drop-proprietary-attributes", BL, no,              ParseBool,         &boolPicks       },
+    { TidyDuplicateAttrs,          MU, "repeated-attributes",         IN, TidyKeepLast,    ParseRepeatAttr,   &repeatAttrPicks },
+    { TidyEmacs,                   MS, "gnu-emacs",                   BL, no,              ParseBool,         &boolPicks       },
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
     { TidyEmacsFile,               IR, "gnu-emacs-file",              ST, 0,               ParseString,       NULL            },
 #endif
     { TidyEmptyTags,               MU, "new-empty-tags",              ST, 0,               ParseTagNames,     NULL            },
-    { TidyEncloseBlockText,        MU, "enclose-block-text",          BL, no,              ParseBool,         boolPicks       },
-    { TidyEncloseBodyText,         MU, "enclose-text",                BL, no,              ParseBool,         boolPicks       },
+    { TidyEncloseBlockText,        MU, "enclose-block-text",          BL, no,              ParseBool,         &boolPicks       },
+    { TidyEncloseBodyText,         MU, "enclose-text",                BL, no,              ParseBool,         &boolPicks       },
     { TidyErrFile,                 MS, "error-file",                  ST, 0,               ParseString,       NULL            },
-    { TidyEscapeCdata,             MU, "escape-cdata",                BL, no,              ParseBool,         boolPicks       },
-    { TidyEscapeScripts,           PP, "escape-scripts",              BL, yes,             ParseBool,         boolPicks       }, /* 20160227 - Issue #348 */
-    { TidyFixBackslash,            MU, "fix-backslash",               BL, yes,             ParseBool,         boolPicks       },
-    { TidyFixComments,             MU, "fix-bad-comments",            BL, yes,             ParseBool,         boolPicks       },
-    { TidyFixUri,                  MU, "fix-uri",                     BL, yes,             ParseBool,         boolPicks       },
-    { TidyForceOutput,             MS, "force-output",                BL, no,              ParseBool,         boolPicks       },
-    { TidyGDocClean,               MU, "gdoc",                        BL, no,              ParseBool,         boolPicks       },
-    { TidyHideComments,            MU, "hide-comments",               BL, no,              ParseBool,         boolPicks       },
-    { TidyHtmlOut,                 MU, "output-html",                 BL, no,              ParseBool,         boolPicks       },
-    { TidyInCharEncoding,          CE, "input-encoding",              IN, UTF8,            ParseCharEnc,      charEncPicks    },
-    { TidyIndentAttributes,        PP, "indent-attributes",           BL, no,              ParseBool,         boolPicks       },
-    { TidyIndentCdata,             MU, "indent-cdata",                BL, no,              ParseBool,         boolPicks       },
-    { TidyIndentContent,           PP, "indent",                      IN, TidyNoState,     ParseAutoBool,     autoBoolPicks   },
+    { TidyEscapeCdata,             MU, "escape-cdata",                BL, no,              ParseBool,         &boolPicks       },
+    { TidyEscapeScripts,           PP, "escape-scripts",              BL, yes,             ParseBool,         &boolPicks       }, /* 20160227 - Issue #348 */
+    { TidyFixBackslash,            MU, "fix-backslash",               BL, yes,             ParseBool,         &boolPicks       },
+    { TidyFixComments,             MU, "fix-bad-comments",            BL, yes,             ParseBool,         &boolPicks       },
+    { TidyFixUri,                  MU, "fix-uri",                     BL, yes,             ParseBool,         &boolPicks       },
+    { TidyForceOutput,             MS, "force-output",                BL, no,              ParseBool,         &boolPicks       },
+    { TidyGDocClean,               MU, "gdoc",                        BL, no,              ParseBool,         &boolPicks       },
+    { TidyHideComments,            MU, "hide-comments",               BL, no,              ParseBool,         &boolPicks       },
+    { TidyHtmlOut,                 MU, "output-html",                 BL, no,              ParseBool,         &boolPicks       },
+    { TidyInCharEncoding,          CE, "input-encoding",              IN, UTF8,            ParseCharEnc,      &charEncPicks    },
+    { TidyIndentAttributes,        PP, "indent-attributes",           BL, no,              ParseBool,         &boolPicks       },
+    { TidyIndentCdata,             MU, "indent-cdata",                BL, no,              ParseBool,         &boolPicks       },
+    { TidyIndentContent,           PP, "indent",                      IN, TidyNoState,     ParseAutoBool,     &autoBoolPicks   },
     { TidyIndentSpaces,            PP, "indent-spaces",               IN, 2,               ParseInt,          NULL            },
     { TidyInlineTags,              MU, "new-inline-tags",             ST, 0,               ParseTagNames,     NULL            },
-    { TidyJoinClasses,             MU, "join-classes",                BL, no,              ParseBool,         boolPicks       },
-    { TidyJoinStyles,              MU, "join-styles",                 BL, yes,             ParseBool,         boolPicks       },
-    { TidyKeepFileTimes,           MS, "keep-time",                   BL, no,              ParseBool,         boolPicks       },
-    { TidyLiteralAttribs,          MU, "literal-attributes",          BL, no,              ParseBool,         boolPicks       },
-    { TidyLogicalEmphasis,         MU, "logical-emphasis",            BL, no,              ParseBool,         boolPicks       },
-    { TidyLowerLiterals,           MU, "lower-literals",              BL, yes,             ParseBool,         boolPicks       },
-    { TidyMakeBare,                MU, "bare",                        BL, no,              ParseBool,         boolPicks       },
-    { TidyMakeClean,               MU, "clean",                       BL, no,              ParseBool,         boolPicks       },
-    { TidyMark,                    MS, "tidy-mark",                   BL, yes,             ParseBool,         boolPicks       },
-    { TidyMergeDivs,               MU, "merge-divs",                  IN, TidyAutoState,   ParseAutoBool,     autoBoolPicks   },
-    { TidyMergeEmphasis,           MU, "merge-emphasis",              BL, yes,             ParseBool,         boolPicks       },
-    { TidyMergeSpans,              MU, "merge-spans",                 IN, TidyAutoState,   ParseAutoBool,     autoBoolPicks   },
+    { TidyJoinClasses,             MU, "join-classes",                BL, no,              ParseBool,         &boolPicks       },
+    { TidyJoinStyles,              MU, "join-styles",                 BL, yes,             ParseBool,         &boolPicks       },
+    { TidyKeepFileTimes,           MS, "keep-time",                   BL, no,              ParseBool,         &boolPicks       },
+    { TidyLiteralAttribs,          MU, "literal-attributes",          BL, no,              ParseBool,         &boolPicks       },
+    { TidyLogicalEmphasis,         MU, "logical-emphasis",            BL, no,              ParseBool,         &boolPicks       },
+    { TidyLowerLiterals,           MU, "lower-literals",              BL, yes,             ParseBool,         &boolPicks       },
+    { TidyMakeBare,                MU, "bare",                        BL, no,              ParseBool,         &boolPicks       },
+    { TidyMakeClean,               MU, "clean",                       BL, no,              ParseBool,         &boolPicks       },
+    { TidyMark,                    MS, "tidy-mark",                   BL, yes,             ParseBool,         &boolPicks       },
+    { TidyMergeDivs,               MU, "merge-divs",                  IN, TidyAutoState,   ParseAutoBool,     &autoBoolPicks   },
+    { TidyMergeEmphasis,           MU, "merge-emphasis",              BL, yes,             ParseBool,         &boolPicks       },
+    { TidyMergeSpans,              MU, "merge-spans",                 IN, TidyAutoState,   ParseAutoBool,     &autoBoolPicks   },
 #if SUPPORT_ASIAN_ENCODINGS
-    { TidyNCR,                     MU, "ncr",                         BL, yes,             ParseBool,         boolPicks       },
+    { TidyNCR,                     MU, "ncr",                         BL, yes,             ParseBool,         &boolPicks       },
 #endif
-    { TidyNewline,                 CE, "newline",                     IN, DLF,             ParseNewline,      newlinePicks    },
-    { TidyNumEntities,             MU, "numeric-entities",            BL, no,              ParseBool,         boolPicks       },
-    { TidyOmitOptionalTags,        MU, "omit-optional-tags",          BL, no,              ParseBool,         boolPicks       },
-    { TidyOutCharEncoding,         CE, "output-encoding",             IN, UTF8,            ParseCharEnc,      charEncPicks    },
+    { TidyNewline,                 CE, "newline",                     IN, DLF,             ParseNewline,      &newlinePicks    },
+    { TidyNumEntities,             MU, "numeric-entities",            BL, no,              ParseBool,         &boolPicks       },
+    { TidyOmitOptionalTags,        MU, "omit-optional-tags",          BL, no,              ParseBool,         &boolPicks       },
+    { TidyOutCharEncoding,         CE, "output-encoding",             IN, UTF8,            ParseCharEnc,      &charEncPicks    },
     { TidyOutFile,                 MS, "output-file",                 ST, 0,               ParseString,       NULL            },
 #if SUPPORT_UTF16_ENCODINGS
-    { TidyOutputBOM,               CE, "output-bom",                  IN, TidyAutoState,   ParseAutoBool,     autoBoolPicks   },
+    { TidyOutputBOM,               CE, "output-bom",                  IN, TidyAutoState,   ParseAutoBool,     &autoBoolPicks   },
 #endif
-    { TidyPPrintTabs,              PP, "indent-with-tabs",            BL, no,              ParseTabs,         boolPicks       }, /* 20150515 - Issue #108 */
-    { TidyPreserveEntities,        MU, "preserve-entities",           BL, no,              ParseBool,         boolPicks       },
+    { TidyPPrintTabs,              PP, "indent-with-tabs",            BL, no,              ParseTabs,         &boolPicks       }, /* 20150515 - Issue #108 */
+    { TidyPreserveEntities,        MU, "preserve-entities",           BL, no,              ParseBool,         &boolPicks       },
     { TidyPreTags,                 MU, "new-pre-tags",                ST, 0,               ParseTagNames,     NULL            },
 #if SUPPORT_ASIAN_ENCODINGS
-    { TidyPunctWrap,               PP, "punctuation-wrap",            BL, no,              ParseBool,         boolPicks       },
+    { TidyPunctWrap,               PP, "punctuation-wrap",            BL, no,              ParseBool,         &boolPicks       },
 #endif
-    { TidyQuiet,                   MS, "quiet",                       BL, no,              ParseBool,         boolPicks       },
-    { TidyQuoteAmpersand,          MU, "quote-ampersand",             BL, yes,             ParseBool,         boolPicks       },
-    { TidyQuoteMarks,              MU, "quote-marks",                 BL, no,              ParseBool,         boolPicks       },
-    { TidyQuoteNbsp,               MU, "quote-nbsp",                  BL, yes,             ParseBool,         boolPicks       },
-    { TidyReplaceColor,            MU, "replace-color",               BL, no,              ParseBool,         boolPicks       },
+    { TidyQuiet,                   MS, "quiet",                       BL, no,              ParseBool,         &boolPicks       },
+    { TidyQuoteAmpersand,          MU, "quote-ampersand",             BL, yes,             ParseBool,         &boolPicks       },
+    { TidyQuoteMarks,              MU, "quote-marks",                 BL, no,              ParseBool,         &boolPicks       },
+    { TidyQuoteNbsp,               MU, "quote-nbsp",                  BL, yes,             ParseBool,         &boolPicks       },
+    { TidyReplaceColor,            MU, "replace-color",               BL, no,              ParseBool,         &boolPicks       },
     { TidyShowErrors,              DG, "show-errors",                 IN, 6,               ParseInt,          NULL            },
-    { TidyShowInfo,                DG, "show-info",                   BL, yes,             ParseBool,         boolPicks       },
-    { TidyShowMarkup,              PP, "markup",                      BL, yes,             ParseBool,         boolPicks       },
-    { TidyShowWarnings,            DG, "show-warnings",               BL, yes,             ParseBool,         boolPicks       },
-    { TidySkipNested,              MU, "skip-nested",                 BL, yes,             ParseBool,         boolPicks       }, /* 1642186 - Issue #65 */
-    { TidySortAttributes,          PP, "sort-attributes",             IN, TidySortAttrNone,ParseSorter,       sorterPicks     },
-    { TidyStrictTagsAttr,          MU, "strict-tags-attributes",      BL, no,              ParseBool,         boolPicks       }, /* 20160209 - Issue #350 */
+    { TidyShowInfo,                DG, "show-info",                   BL, yes,             ParseBool,         &boolPicks       },
+    { TidyShowMarkup,              PP, "markup",                      BL, yes,             ParseBool,         &boolPicks       },
+    { TidyShowWarnings,            DG, "show-warnings",               BL, yes,             ParseBool,         &boolPicks       },
+    { TidySkipNested,              MU, "skip-nested",                 BL, yes,             ParseBool,         &boolPicks       }, /* 1642186 - Issue #65 */
+    { TidySortAttributes,          PP, "sort-attributes",             IN, TidySortAttrNone,ParseSorter,       &sorterPicks     },
+    { TidyStrictTagsAttr,          MU, "strict-tags-attributes",      BL, no,              ParseBool,         &boolPicks       }, /* 20160209 - Issue #350 */
     { TidyTabSize,                 PP, "tab-size",                    IN, 8,               ParseInt,          NULL            },
-    { TidyUpperCaseAttrs,          MU, "uppercase-attributes",        BL, no,              ParseBool,         boolPicks       },
-    { TidyUpperCaseTags,           MU, "uppercase-tags",              BL, no,              ParseBool,         boolPicks       },
-    { TidyUseCustomTags,           MU, "custom-tags",                 IN, TidyCustomNo,    ParseUseCustomTags,NULL, NULL, &customTagsPicks }, /* 20170309 - Issue #119 */
-    { TidyVertSpace,               PP, "vertical-space",              IN, no,              ParseAutoBool,     autoBoolPicks   }, /* #228 - tri option */
-    { TidyWarnPropAttrs,           MU, "warn-proprietary-attributes", BL, yes,             ParseBool,         boolPicks       },
-    { TidyWord2000,                MU, "word-2000",                   BL, no,              ParseBool,         boolPicks       },
-    { TidyWrapAsp,                 PP, "wrap-asp",                    BL, yes,             ParseBool,         boolPicks       },
-    { TidyWrapAttVals,             PP, "wrap-attributes",             BL, no,              ParseBool,         boolPicks       },
-    { TidyWrapJste,                PP, "wrap-jste",                   BL, yes,             ParseBool,         boolPicks       },
+    { TidyUpperCaseAttrs,          MU, "uppercase-attributes",        BL, no,              ParseBool,         &boolPicks       },
+    { TidyUpperCaseTags,           MU, "uppercase-tags",              BL, no,              ParseBool,         &boolPicks       },
+    { TidyUseCustomTags,           MU, "custom-tags",                 IN, TidyCustomNo,    ParseUseCustomTags,&customTagsPicks }, /* 20170309 - Issue #119 */
+    { TidyVertSpace,               PP, "vertical-space",              IN, no,              ParseAutoBool,     &autoBoolPicks   }, /* #228 - tri option */
+    { TidyWarnPropAttrs,           MU, "warn-proprietary-attributes", BL, yes,             ParseBool,         &boolPicks       },
+    { TidyWord2000,                MU, "word-2000",                   BL, no,              ParseBool,         &boolPicks       },
+    { TidyWrapAsp,                 PP, "wrap-asp",                    BL, yes,             ParseBool,         &boolPicks       },
+    { TidyWrapAttVals,             PP, "wrap-attributes",             BL, no,              ParseBool,         &boolPicks       },
+    { TidyWrapJste,                PP, "wrap-jste",                   BL, yes,             ParseBool,         &boolPicks       },
     { TidyWrapLen,                 PP, "wrap",                        IN, 68,              ParseInt,          NULL            },
-    { TidyWrapPhp,                 PP, "wrap-php",                    BL, yes,             ParseBool,         boolPicks       },
-    { TidyWrapScriptlets,          PP, "wrap-script-literals",        BL, no,              ParseBool,         boolPicks       },
-    { TidyWrapSection,             PP, "wrap-sections",               BL, yes,             ParseBool,         boolPicks       },
-    { TidyWriteBack,               MS, "write-back",                  BL, no,              ParseBool,         boolPicks       },
-    { TidyXhtmlOut,                MU, "output-xhtml",                BL, no,              ParseBool,         boolPicks       },
-    { TidyXmlDecl,                 MU, "add-xml-decl",                BL, no,              ParseBool,         boolPicks       },
-    { TidyXmlOut,                  MU, "output-xml",                  BL, no,              ParseBool,         boolPicks       },
-    { TidyXmlPIs,                  MU, "assume-xml-procins",          BL, no,              ParseBool,         boolPicks       },
-    { TidyXmlSpace,                MU, "add-xml-space",               BL, no,              ParseBool,         boolPicks       },
-    { TidyXmlTags,                 MU, "input-xml",                   BL, no,              ParseBool,         boolPicks       },
+    { TidyWrapPhp,                 PP, "wrap-php",                    BL, yes,             ParseBool,         &boolPicks       },
+    { TidyWrapScriptlets,          PP, "wrap-script-literals",        BL, no,              ParseBool,         &boolPicks       },
+    { TidyWrapSection,             PP, "wrap-sections",               BL, yes,             ParseBool,         &boolPicks       },
+    { TidyWriteBack,               MS, "write-back",                  BL, no,              ParseBool,         &boolPicks       },
+    { TidyXhtmlOut,                MU, "output-xhtml",                BL, no,              ParseBool,         &boolPicks       },
+    { TidyXmlDecl,                 MU, "add-xml-decl",                BL, no,              ParseBool,         &boolPicks       },
+    { TidyXmlOut,                  MU, "output-xml",                  BL, no,              ParseBool,         &boolPicks       },
+    { TidyXmlPIs,                  MU, "assume-xml-procins",          BL, no,              ParseBool,         &boolPicks       },
+    { TidyXmlSpace,                MU, "add-xml-space",               BL, no,              ParseBool,         &boolPicks       },
+    { TidyXmlTags,                 MU, "input-xml",                   BL, no,              ParseBool,         &boolPicks       },
     { N_TIDY_OPTIONS,              XX, NULL,                          XY, 0,               NULL,              NULL            }
 };
 
@@ -1681,7 +1664,7 @@ const TidyOptionImpl*  TY_(getNextOption)( TidyDocImpl* ARG_UNUSED(doc),
 TidyIterator TY_(getOptionPickList)( const TidyOptionImpl* option )
 {
     size_t ix = 0;
-    if ( option && ( option->oldPickList || option->pickList ) ) // TODO
+    if ( option && option->pickList )
         ix = 1;
     return (TidyIterator) ix;
 }
@@ -1698,22 +1681,13 @@ ctmbstr      TY_(getNextOptionPick)( const TidyOptionImpl* option,
     
     if ( option->pickList )
     {
-        if ( ix > 0 && ix < TIDY_PL_SIZE )
+        if ( ix > 0 && ix < TIDY_PL_SIZE && option->pickList )
         {
             item = &(*option->pickList)[ ix-1 ];
             val = item->label;
         }
         item = &(*option->pickList)[ ix ];
         *iter = (TidyIterator) ( val && item->label ? ix + 1 : (size_t)0 );
-    }
-    else if ( option->oldPickList )
-    {
-        // TODO: old
-        if ( ix > 0 && ix < TIDY_PL_SIZE && option->oldPickList )
-        {
-            val = option->oldPickList[ ix-1 ];
-        }
-        *iter = (TidyIterator) ( val && option->oldPickList[ix] ? ix + 1 : (size_t)0 );
     }
     
     return val;
@@ -1760,15 +1734,6 @@ static int  WriteOptionPick( const TidyOptionImpl* option, uint ival, StreamOut*
         }
         if ( ix==ival && item->label )
             return WriteOptionString( option, item->label, out );
-    }
-    else
-    {
-        // TODO: old picklist
-        const ctmbstr* val = option->oldPickList;
-        for ( ix=0; val[ix] && ix<ival; ++ix )
-        /**/;
-        if ( ix==ival && val[ix] )
-            return WriteOptionString( option, val[ix], out );
     }
     
     return -1;
@@ -1830,7 +1795,7 @@ static int  SaveConfigToStream( TidyDocImpl* doc, StreamOut* out )
           else
             rc = WriteOptionPick( option, dtmode, out );
         }
-        else if ( option->oldPickList || option->pickList) // TODO: oldPickList
+        else if ( option->pickList)
           rc = WriteOptionPick( option, val->v, out );
         else
         {
