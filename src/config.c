@@ -143,7 +143,7 @@ static const ctmbstr sorterPicks[] =
   NULL
 };
 
-static const OptionPickList customTagsPicks = {
+static PickListItems customTagsPicks = {
     {"no",         TidyCustomNo,         { "no", "n" }                },
     {"blocklevel", TidyCustomBlocklevel, { "blocklevel", "y", "yes" } },
     {"empty",      TidyCustomEmpty,      { "empty" }                  },
@@ -152,15 +152,6 @@ static const OptionPickList customTagsPicks = {
     NULL
 };
 
-static const ctmbstr customTagsPicksOld[] =
-{
-    "no",
-    "blocklevel",
-    "empty",
-    "inline",
-    "pre",
-    NULL
-};
 
 #define MU TidyMarkup
 #define DG TidyDiagnostics
@@ -327,7 +318,7 @@ static const TidyOptionImpl option_defs[] =
     { TidyTabSize,                 PP, "tab-size",                    IN, 8,               ParseInt,          NULL            },
     { TidyUpperCaseAttrs,          MU, "uppercase-attributes",        BL, no,              ParseBool,         boolPicks       },
     { TidyUpperCaseTags,           MU, "uppercase-tags",              BL, no,              ParseBool,         boolPicks       },
-    { TidyUseCustomTags,           MU, "custom-tags",                 IN, TidyCustomNo,    ParseUseCustomTags,customTagsPicksOld, NULL, &customTagsPicks }, /* 20170309 - Issue #119 */
+    { TidyUseCustomTags,           MU, "custom-tags",                 IN, TidyCustomNo,    ParseUseCustomTags,NULL, NULL, &customTagsPicks }, /* 20170309 - Issue #119 */
     { TidyVertSpace,               PP, "vertical-space",              IN, no,              ParseAutoBool,     autoBoolPicks   }, /* #228 - tri option */
     { TidyWarnPropAttrs,           MU, "warn-proprietary-attributes", BL, yes,             ParseBool,         boolPicks       },
     { TidyWord2000,                MU, "word-2000",                   BL, no,              ParseBool,         boolPicks       },
@@ -1690,7 +1681,7 @@ const TidyOptionImpl*  TY_(getNextOption)( TidyDocImpl* ARG_UNUSED(doc),
 TidyIterator TY_(getOptionPickList)( const TidyOptionImpl* option )
 {
     size_t ix = 0;
-    if ( option && option->oldPickList )
+    if ( option && ( option->oldPickList || option->pickList ) ) // TODO
         ix = 1;
     return (TidyIterator) ix;
 }
@@ -1700,12 +1691,31 @@ ctmbstr      TY_(getNextOptionPick)( const TidyOptionImpl* option,
 {
     size_t ix;
     ctmbstr val = NULL;
+    const PickListItem *item= NULL;
     assert( option!=NULL && iter != NULL );
 
     ix = (size_t) *iter;
-    if ( ix > 0 && ix < 16 && option->oldPickList )
-        val = option->oldPickList[ ix-1 ];
-    *iter = (TidyIterator) ( val && option->oldPickList[ix] ? ix + 1 : (size_t)0 );
+    
+    if ( option->pickList )
+    {
+        if ( ix > 0 && ix < TIDY_PL_SIZE )
+        {
+            item = &(*option->pickList)[ ix-1 ];
+            val = item->label;
+        }
+        item = &(*option->pickList)[ ix ];
+        *iter = (TidyIterator) ( val && item->label ? ix + 1 : (size_t)0 );
+    }
+    else if ( option->oldPickList )
+    {
+        // TODO: old
+        if ( ix > 0 && ix < TIDY_PL_SIZE && option->oldPickList )
+        {
+            val = option->oldPickList[ ix-1 ];
+        }
+        *iter = (TidyIterator) ( val && option->oldPickList[ix] ? ix + 1 : (size_t)0 );
+    }
+    
     return val;
 }
 
@@ -1739,12 +1749,28 @@ static int  WriteOptionBool( const TidyOptionImpl* option, Bool bval, StreamOut*
 
 static int  WriteOptionPick( const TidyOptionImpl* option, uint ival, StreamOut* out )
 {
-    uint ix;
-    const ctmbstr* val = option->oldPickList;
-    for ( ix=0; val[ix] && ix<ival; ++ix )
+    uint ix = 0;
+    const PickListItem *item = NULL;
+    
+    if ( option-> pickList )
+    {
+        while ( (item = &(*option->pickList)[ ix ]) && item->label && ix<ival )
+        {
+            ++ix;
+        }
+        if ( ix==ival && item->label )
+            return WriteOptionString( option, item->label, out );
+    }
+    else
+    {
+        // TODO: old picklist
+        const ctmbstr* val = option->oldPickList;
+        for ( ix=0; val[ix] && ix<ival; ++ix )
         /**/;
-    if ( ix==ival && val[ix] )
-        return WriteOptionString( option, val[ix], out );
+        if ( ix==ival && val[ix] )
+            return WriteOptionString( option, val[ix], out );
+    }
+    
     return -1;
 }
 
@@ -1804,7 +1830,7 @@ static int  SaveConfigToStream( TidyDocImpl* doc, StreamOut* out )
           else
             rc = WriteOptionPick( option, dtmode, out );
         }
-        else if ( option->oldPickList )
+        else if ( option->oldPickList || option->pickList) // TODO: oldPickList
           rc = WriteOptionPick( option, val->v, out );
         else
         {

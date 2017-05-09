@@ -25,30 +25,44 @@
 #include "tidy.h"
 #include "streamio.h"
 
-struct _tidy_option;
-typedef struct _tidy_option TidyOptionImpl;
 
+/** PickLists may have up to 16 items. For some reason,
+ ** this limit has always been hard-coded into Tidy.
+ */
+#define TIDY_PL_SIZE 16
+
+/** Structs of this type contain information needed in order to present pick lists,
+ ** relate pick list entries to public enum values, and parse strings that are
+ ** accepted in order to assign the value.
+ */
 typedef struct PickListItem {
-    const char* label;
-    int value;
-    const char* inputs[10];
+    ctmbstr label;      /**< PickList label for this item. */
+    const int value;    /**< The option value represented by this label. */
+    ctmbstr inputs[10]; /**< String values that can select this value. */
 } PickListItem;
 
-typedef PickListItem OptionPickList[];
+/** An array of PickListItems, fixed in size for in-code declarations. 
+ ** 
+ */
+typedef const PickListItem PickListItems[TIDY_PL_SIZE];
+
+
+struct _tidy_option;
+typedef struct _tidy_option TidyOptionImpl;
 
 typedef Bool (ParseProperty)( TidyDocImpl* doc, const TidyOptionImpl* opt );
 
 struct _tidy_option
 {
     TidyOptionId        id;
-    TidyConfigCategory     category;        /* put 'em in groups */
-    ctmbstr                name;            /* property name */
-    TidyOptionType         type;            /* string, int or bool */
-    ulong                  dflt;            /* default for TidyInteger and TidyBoolean */
-    ParseProperty*         parser;          /* parsing method, read-only if NULL */
-    const ctmbstr*         oldPickList;     /* old style pick list */
-    ctmbstr                pdflt;           /* default for TidyString */
-    const OptionPickList*  pickList;        /* new style pick list */
+    TidyConfigCategory  category;        /* put 'em in groups */
+    ctmbstr             name;            /* property name */
+    TidyOptionType      type;            /* string, int or bool */
+    ulong               dflt;            /* default for TidyInteger and TidyBoolean */
+    ParseProperty*      parser;          /* parsing method, read-only if NULL */
+    const ctmbstr*      oldPickList;     /* old style pick list */
+    ctmbstr             pdflt;           /* default for TidyString */
+    PickListItems*      pickList;        /* new style pick list */
 };
 
 typedef union
