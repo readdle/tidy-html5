@@ -740,23 +740,24 @@ void TY_(FreeDeclaredTags)( TidyDocImpl* doc, UserTagType tagType )
 \*/
 void TY_(AdjustTags)( TidyDocImpl *doc )
 {
-    Dict *np = (Dict *)TY_(LookupTagDef)( TidyTag_A );
-    TidyTagImpl* tags = &doc->tags;
-    if (np) 
-    {
-        np->parser = TY_(ParseInline);
-        np->model  = CM_INLINE;
-#if ELEMENT_HASH_LOOKUP
-        tagsEmptyHash( doc, tags );
-#endif
-    }
+//    Dict *np = (Dict *)TY_(LookupTagDef)( TidyTag_A );
+//    TidyTagImpl* tags = &doc->tags;
+//    if (np)
+//    {
+//        np->parser = TY_(ParseInline);
+//        np->model  = CM_INLINE;
+//#if ELEMENT_HASH_LOOKUP
+//        tagsEmptyHash( doc, tags );
+//#endif
+//    }
 
 /*\
  * Issue #196
  * TidyTag_CAPTION allows %flow; in HTML5,
  * but only %inline; in HTML4
 \*/
-    np = (Dict *)TY_(LookupTagDef)( TidyTag_CAPTION );
+    Dict *np = (Dict *)TY_(LookupTagDef)( TidyTag_CAPTION );
+    TidyTagImpl* tags = &doc->tags;
     if (np)
     {
         np->parser = TY_(ParseInline);
