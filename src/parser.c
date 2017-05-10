@@ -1347,33 +1347,33 @@ void TY_(ParseBlock)( TidyDocImpl* doc, Node *element, GetTokenMode mode)
          *  href: http://www.w3.org/TR/html-markup/a.html
          *  The interactive element a must not appear as a descendant of the a element.
         \*/
-        if ( nodeIsA(node) && !node->implicit && 
-             (nodeIsA(element) || DescendantOf(element, TidyTag_A)) )
-        {
-            if (node->type != EndTag && node->attributes == NULL
-                && cfgBool(doc, TidyCoerceEndTags) )
-            {
-                node->type = EndTag;
-                TY_(ReportError)(doc, element, node, COERCE_TO_ENDTAG);
-                TY_(UngetToken)( doc );
-                continue;
-            }
-
-            if (nodeIsA(element))
-            {
-                TY_(UngetToken)( doc );
-            }
-            TY_(ReportError)(doc, element, node, MISSING_ENDTAG_BEFORE);
-
-            if (!(mode & Preformatted))
-                TrimSpaces(doc, element);
-
-#if !defined(NDEBUG) && defined(_MSC_VER)
-            in_parse_block--;
-            SPRTF("Exit ParseBlock 9b %d...\n",in_parse_block);
-#endif
-            return;
-        }
+//        if ( nodeIsA(node) && !node->implicit && 
+//             (nodeIsA(element) || DescendantOf(element, TidyTag_A)) )
+//        {
+//            if (node->type != EndTag && node->attributes == NULL
+//                && cfgBool(doc, TidyCoerceEndTags) )
+//            {
+//                node->type = EndTag;
+//                TY_(ReportError)(doc, element, node, COERCE_TO_ENDTAG);
+//                TY_(UngetToken)( doc );
+//                continue;
+//            }
+//
+//            if (nodeIsA(element))
+//            {
+//                TY_(UngetToken)( doc );
+//            }
+//            TY_(ReportError)(doc, element, node, MISSING_ENDTAG_BEFORE);
+//
+//            if (!(mode & Preformatted))
+//                TrimSpaces(doc, element);
+//
+//#if !defined(NDEBUG) && defined(_MSC_VER)
+//            in_parse_block--;
+//            SPRTF("Exit ParseBlock 9b %d...\n",in_parse_block);
+//#endif
+//            return;
+//        }
 
         /* parse known element */
         if (TY_(nodeIsElement)(node))
