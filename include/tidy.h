@@ -65,6 +65,11 @@
 #include "tidyplatform.h"
 #include "tidyenum.h"
 
+#if defined(ANDROID) || defined(__ANDROID__)
+typedef unsigned long ulong;
+#endif
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
