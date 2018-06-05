@@ -4035,6 +4035,18 @@ void TY_(ParseBody)(TidyDocImpl* doc, Node *body, GetTokenMode mode)
             continue;
         }
 
+        /* THEAD, TFOOT or TBODY
+        vs.savchenko@readdle.com:
+        Do not allow these directly in BODY, it may corrupt
+        a document structure after the cleanup operation.
+         See SPC-1006. messages-198.mbox
+         */
+        if ( TY_(nodeHasCM)(node, CM_ROWGRP) )
+        {
+            TY_(ReportError)(doc, body, node, DISCARDING_UNEXPECTED);
+            TY_(FreeNode)( doc, node);
+            continue;
+        }
         /*
           Netscape allows LI and DD directly in BODY
           We infer UL or DL respectively and use this
