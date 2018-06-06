@@ -2595,7 +2595,7 @@ static void check_me(char *name)
 static Node* GetTokenFromStream( TidyDocImpl* doc, GetTokenMode mode )
 {
     Lexer* lexer = doc->lexer;
-    uint c, lexdump, badcomment = 0;
+    uint c, badcomment = 0;
     Bool isempty = no;
     AttVal *attributes = NULL;
     Node *node;
@@ -3350,45 +3350,16 @@ static Node* GetTokenFromStream( TidyDocImpl* doc, GetTokenMode mode )
                     continue;
 
                 /* now look for '>' */
-                c = TY_(ReadChar)(doc->docIn);
-
-                lexdump = 1;
-                if (c != '>')
+                while ((c = TY_(ReadChar)(doc->docIn)) != '>')
                 {
-                    /* Issue #153 - can also be ]'-->' */
-                    if (c == '-') 
-                    {
-                        c = TY_(ReadChar)(doc->docIn);
-                        if (c == '-')
-                        {
-                            c = TY_(ReadChar)(doc->docIn);
-                            if (c != '>')
-                            {
-                                TY_(UngetChar)(c, doc->docIn);
-                                TY_(UngetChar)('-', doc->docIn);
-                                TY_(UngetChar)('-', doc->docIn);
-                                continue;
-                            }
-                            /* this failed!
-                               TY_(AddCharToLexer)(lexer, '-'); TY_(AddCharToLexer)(lexer, '-'); lexdump = 0; 
-                               got output <![endif]--]> - needs furhter fix in pprint section output 
-                             */
-                        }
-                        else
-                        {
-                            TY_(UngetChar)(c, doc->docIn);
-                            TY_(UngetChar)('-', doc->docIn);
-                            continue;
-                        }
-                    } 
-                    else 
+                    if (c == EndOfStream)
                     {
                         TY_(UngetChar)(c, doc->docIn);
-                        continue;
+                        break;
                     }
                 }
- 
-                lexer->lexsize -= lexdump;
+
+                lexer->lexsize -= 1;
                 lexer->txtend = lexer->lexsize;
                 lexer->lexbuf[lexer->lexsize] = '\0';
                 lexer->state = LEX_CONTENT;
