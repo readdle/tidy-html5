@@ -917,6 +917,8 @@ Lexer* TY_(NewLexer)( TidyDocImpl* doc )
         lexer->versions = (VERS_ALL|VERS_PROPRIETARY);
         lexer->doctype = VERS_UNKNOWN;
         lexer->root = &doc->root;
+
+        lexer->commentSymbol = 0;
     }
     return lexer;
 }
@@ -2741,26 +2743,7 @@ static Node* GetTokenFromStream( TidyDocImpl* doc, GetTokenMode mode )
                 if (c == '!')
                 {
                     c = TY_(ReadChar)(doc->docIn);
-
-                    if (c == '-')
-                    {
-                        c = TY_(ReadChar)(doc->docIn);
-
-                        if (c == '-')
-                        {
-                            lexer->state = LEX_COMMENT;  /* comment */
-                            lexer->lexsize -= 2;
-                            lexer->txtend = lexer->lexsize;
-
-                            CondReturnTextNode(doc, 4)
-
-                            lexer->txtstart = lexer->lexsize;
-                            continue;
-                        }
-
-                        TY_(ReportError)(doc, NULL, NULL, MALFORMED_COMMENT );
-                    }
-                    else if (c == 'd' || c == 'D')
+                    if (c == 'd' || c == 'D')
                     {
                         /* todo: check for complete "<!DOCTYPE" not just <!D */
 
@@ -2828,6 +2811,26 @@ static Node* GetTokenFromStream( TidyDocImpl* doc, GetTokenMode mode )
 
                         lexer->txtstart = lexer->lexsize;
                         continue;
+                    }
+                    else
+                    {
+                        uint commentSymbol = c;
+                        c = TY_(ReadChar)(doc->docIn);
+
+                        if (c == commentSymbol)
+                        {
+                            lexer->commentSymbol = commentSymbol;
+                            lexer->state = LEX_COMMENT;  /* comment */
+                            lexer->lexsize -= 2;
+                            lexer->txtend = lexer->lexsize;
+
+                            CondReturnTextNode(doc, 4)
+
+                            lexer->txtstart = lexer->lexsize;
+                            continue;
+                        }
+                        lexer->commentSymbol = 0;
+                        TY_(ReportError)(doc, NULL, NULL, MALFORMED_COMMENT );
                     }
 
 
@@ -3017,13 +3020,13 @@ static Node* GetTokenFromStream( TidyDocImpl* doc, GetTokenMode mode )
 
             case LEX_COMMENT:  /* seen <!-- so look for --> */
 
-                if (c != '-')
+                if (c != lexer->commentSymbol)
                     continue;
 
                 c = TY_(ReadChar)(doc->docIn);
                 TY_(AddCharToLexer)(lexer, c);
 
-                if (c != '-')
+                if (c != lexer->commentSymbol)
                     continue;
 
             end_comment:
@@ -3041,6 +3044,7 @@ static Node* GetTokenFromStream( TidyDocImpl* doc, GetTokenMode mode )
                     lexer->state = LEX_CONTENT;
                     lexer->waswhite = no;
                     lexer->token = CommentToken(doc);
+                    lexer->commentSymbol = 0;
 
                     /* now look for a line break */
 
@@ -3069,7 +3073,7 @@ static Node* GetTokenFromStream( TidyDocImpl* doc, GetTokenMode mode )
                     lexer->lexbuf[lexer->lexsize - 2] = '=';
 
                 /* if '-' then look for '>' to end the comment */
-                if (c == '-')
+                if (c == lexer->commentSymbol)
                 {
                     TY_(AddCharToLexer)(lexer, c);
                     goto end_comment;

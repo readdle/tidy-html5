@@ -393,6 +393,9 @@ struct _Lexer
 
     TidyAllocator* allocator; /* allocator */
 
+    /* Miscellaneous */
+    uint commentSymbol;
+
 #if 0
     TidyDocImpl* doc;       /* Pointer back to doc for error reporting */
 #endif 
