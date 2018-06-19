@@ -3743,7 +3743,7 @@ void TY_(ParseHead)(TidyDocImpl* doc, Node *head, GetTokenMode ARG_UNUSED(mode))
             continue;
         }
 
-        /* discard unknown Section tags, probably mailformed script blocks <!-[if ...>...<![endif]-> */
+        /* discard unknown Section tags, probably malformed script blocks <!-[if ...>...<![endif]-> */
         if (node->type == SectionTag && node->tag == NULL && node->element == NULL)
         {
             TY_(ReportError)(doc, head, node, DISCARDING_UNEXPECTED);
