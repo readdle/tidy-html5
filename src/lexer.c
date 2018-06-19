@@ -3094,6 +3094,14 @@ static Node* GetTokenFromStream( TidyDocImpl* doc, GetTokenMode mode )
                 lexer->lexsize -= 1;
                 lexer->token = ParseDocTypeDecl(doc);
 
+                /* skip malformed DOCTYPE tag */
+                if (lexer->token == NULL) {
+                    TY_(PopInline)( doc, NULL );
+                    lexer->state = LEX_CONTENT;
+                    lexer->waswhite = no;
+                    continue;
+                }
+
                 lexer->txtend = lexer->lexsize;
                 lexer->lexbuf[lexer->lexsize] = '\0';
                 lexer->state = LEX_CONTENT;
