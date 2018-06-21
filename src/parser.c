@@ -2513,6 +2513,14 @@ void TY_(ParseList)(TidyDocImpl* doc, Node *list, GetTokenMode ARG_UNUSED(mode))
             continue;
         }
 
+        /* elements not allowed inside BODY */
+        if (TY_(nodeHasCM)(node,CM_HTML))
+        {
+            TY_(ReportError)(doc, list, node, DISCARDING_UNEXPECTED);
+            TY_(FreeNode)( doc, node);
+            continue;
+        }
+
         if ( nodeIsLI(node) || TY_(IsHTML5Mode)(doc))
         {
             /* node is <LI> 
