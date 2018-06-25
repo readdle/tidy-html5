@@ -2294,9 +2294,6 @@ static Node *GetCDATA( TidyDocImpl* doc, Node *container )
     uint i;
     Bool isEmpty = yes;
     Bool matches = no;
-    Bool isComment = no;
-    Bool skipWhite = no;
-    Bool isWhite = no;
     uint c;
     Bool hasSrc = (TY_(AttrGetById)(container, TidyAttr_SRC) != NULL) ? yes : no;
     /*\ Issue #65 (1642186) and #280 - is script or style, and the option on
@@ -2312,44 +2309,15 @@ static Node *GetCDATA( TidyDocImpl* doc, Node *container )
     /* seen start tag, look for matching end tag */
     while ((c = TY_(ReadChar)(doc->docIn)) != EndOfStream)
     {
-        isWhite = TY_(IsWhite)(c);
-        if (!skipWhite || !isWhite) {
-            TY_(AddCharToLexer)(lexer, c);
-        }
-
+        TY_(AddCharToLexer)(lexer, c);
         lexer->txtend = lexer->lexsize;
 
         if (state == CDATA_INTERMEDIATE)
         {
             if (c != '<')
             {
-                if (isEmpty && !isWhite)
+                if (isEmpty && !TY_(IsWhite)(c))
                     isEmpty = no;
-
-                /*
-                 lets save <![ ]> comment blocks, white space symbols are not
-                 allowed between ']' and '>' symbols
-                 */
-                if (isComment) {
-                    if (c == ']') {
-                        c = TY_(ReadChar)(doc->docIn);
-
-                        if (c == '>') {
-                            isComment = no;
-                            skipWhite = no;
-                        }
-                        else if (isWhite) {
-                            skipWhite = yes;
-                            TY_(UngetChar)(c, doc->docIn);
-                        }
-                    }
-                    else {
-                        if (skipWhite && !isWhite) {
-                            skipWhite = no;
-                        }
-                    }
-                }
-
                 continue;
             }
 
@@ -2422,17 +2390,6 @@ static Node *GetCDATA( TidyDocImpl* doc, Node *container )
 
                 start = lexer->lexsize;
                 state = CDATA_ENDTAG;
-            }
-            else if (c == '!') {
-                c = TY_(ReadChar)(doc->docIn);
-
-                if (c == '[') {
-                    /* found '<![' lets find ']>', this will preserve nested comment block structure */
-                    
-                    isComment = yes;
-                }
-                TY_(UngetChar)(c, doc->docIn);
-                continue;
             }
             else
             {
