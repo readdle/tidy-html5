@@ -2296,7 +2296,6 @@ static Node *GetCDATA( TidyDocImpl* doc, Node *container )
     Bool matches = no;
     Bool isComment = no;
     Bool skipWhite = no;
-    Bool isWhite = no;
     uint c;
     Bool hasSrc = (TY_(AttrGetById)(container, TidyAttr_SRC) != NULL) ? yes : no;
     /*\ Issue #65 (1642186) and #280 - is script or style, and the option on
@@ -2312,8 +2311,7 @@ static Node *GetCDATA( TidyDocImpl* doc, Node *container )
     /* seen start tag, look for matching end tag */
     while ((c = TY_(ReadChar)(doc->docIn)) != EndOfStream)
     {
-        isWhite = TY_(IsWhite)(c);
-        if (!skipWhite || !isWhite) {
+        if (!skipWhite || !TY_(IsWhite)(c)) {
             TY_(AddCharToLexer)(lexer, c);
         }
 
@@ -2323,28 +2321,51 @@ static Node *GetCDATA( TidyDocImpl* doc, Node *container )
         {
             if (c != '<')
             {
-                if (isEmpty && !isWhite)
+                if (isEmpty && !TY_(IsWhite)(c))
                     isEmpty = no;
 
                 /*
                  lets save <![ ]> comment blocks, white space symbols are not
                  allowed between ']' and '>' symbols
                  */
-                if (isComment) {
-                    if (c == ']') {
+                if (isComment)
+                {
+                    if (c == ']')
+                    {
                         c = TY_(ReadChar)(doc->docIn);
 
-                        if (c == '>') {
+                        if (c == '>')
+                        {
+                            TY_(AddCharToLexer)(lexer, c);
                             isComment = no;
                             skipWhite = no;
                         }
-                        else if (isWhite) {
+                        else if (TY_(IsWhite)(c))
+                        {
+                            uint firstSpace = c;
                             skipWhite = yes;
-                            TY_(UngetChar)(c, doc->docIn);
+
+                            c = TY_(ReadChar)(doc->docIn);
+                            if (c == ']')
+                            {
+                                TY_(AddCharToLexer)(lexer, c);
+                            }
+                            else if (!TY_(IsWhite)(c))
+                            {
+                                TY_(AddCharToLexer)(lexer, firstSpace);
+                                TY_(AddCharToLexer)(lexer, c);
+                                skipWhite = no;
+                            }
+                        }
+                        else
+                        {
+                            TY_(AddCharToLexer)(lexer, c);
                         }
                     }
-                    else {
-                        if (skipWhite && !isWhite) {
+                    else
+                    {
+                        if (skipWhite && !TY_(IsWhite)(c))
+                        {
                             skipWhite = no;
                         }
                     }
@@ -2424,6 +2445,7 @@ static Node *GetCDATA( TidyDocImpl* doc, Node *container )
                 state = CDATA_ENDTAG;
             }
             else if (c == '!') {
+                TY_(AddCharToLexer)(lexer, c);
                 c = TY_(ReadChar)(doc->docIn);
 
                 if (c == '[') {
