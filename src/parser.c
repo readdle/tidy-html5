@@ -3264,6 +3264,13 @@ void TY_(ParsePre)( TidyDocImpl* doc, Node *pre, GetTokenMode ARG_UNUSED(mode) )
                 TY_(UngetToken)(doc);
                 return;
             }
+            /* tags are not allowed inside of a BODY */
+            else if (TY_(nodeHasCM)(node, CM_HTML)) 
+            {
+                TY_(ReportError)(doc, pre, node, DISCARDING_UNEXPECTED);
+                TY_(FreeNode)(doc, node);
+                continue;
+            }
 
             /*
               This is basically what Tidy 04 August 2000 did and far more accurate
