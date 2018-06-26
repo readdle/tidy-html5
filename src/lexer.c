@@ -2294,6 +2294,9 @@ static Node *GetCDATA( TidyDocImpl* doc, Node *container )
     uint i;
     Bool isEmpty = yes;
     Bool matches = no;
+    Bool isComment = no;
+    Bool skipWhite = no;
+
     uint c;
     Bool hasSrc = (TY_(AttrGetById)(container, TidyAttr_SRC) != NULL) ? yes : no;
     /*\ Issue #65 (1642186) and #280 - is script or style, and the option on
@@ -2309,7 +2312,10 @@ static Node *GetCDATA( TidyDocImpl* doc, Node *container )
     /* seen start tag, look for matching end tag */
     while ((c = TY_(ReadChar)(doc->docIn)) != EndOfStream)
     {
-        TY_(AddCharToLexer)(lexer, c);
+        if (!skipWhite || !TY_(IsWhite)(c)) {
+            TY_(AddCharToLexer)(lexer, c);
+        }
+
         lexer->txtend = lexer->lexsize;
 
         if (state == CDATA_INTERMEDIATE)
@@ -2318,6 +2324,54 @@ static Node *GetCDATA( TidyDocImpl* doc, Node *container )
             {
                 if (isEmpty && !TY_(IsWhite)(c))
                     isEmpty = no;
+
+                /*
+                 lets save <![ ]> comment blocks, white space symbols are not
+                 allowed between ']' and '>' symbols
+                 */
+                if (isComment)
+                {
+                    if (c == ']')
+                    {
+                        c = TY_(ReadChar)(doc->docIn);
+
+                        if (c == '>')
+                        {
+                            TY_(AddCharToLexer)(lexer, c);
+                            isComment = no;
+                            skipWhite = no;
+                        }
+                        else if (TY_(IsWhite)(c))
+                        {
+                            uint firstSpace = c;
+                            skipWhite = yes;
+
+                            c = TY_(ReadChar)(doc->docIn);
+                            if (c == ']')
+                            {
+                                TY_(AddCharToLexer)(lexer, c);
+                            }
+                            else if (!TY_(IsWhite)(c))
+                            {
+                                TY_(AddCharToLexer)(lexer, firstSpace);
+                                TY_(AddCharToLexer)(lexer, c);
+                                skipWhite = no;
+                            }
+                        }
+                        else
+                        {
+                            TY_(AddCharToLexer)(lexer, c);
+                        }
+                    }
+                    else
+                    {
+                        if (skipWhite && !TY_(IsWhite)(c))
+                        {
+                            skipWhite = no;
+                        }
+                    }
+                }
+
                 continue;
             }
 
@@ -2390,6 +2444,18 @@ static Node *GetCDATA( TidyDocImpl* doc, Node *container )
 
                 start = lexer->lexsize;
                 state = CDATA_ENDTAG;
+            }
+            else if (c == '!') {
+                TY_(AddCharToLexer)(lexer, c);
+                c = TY_(ReadChar)(doc->docIn);
+
+                if (c == '[') {
+                    /* found '<![' lets find ']>', this will preserve nested comment block structure */
+                    
+                    isComment = yes;
+                }
+                TY_(UngetChar)(c, doc->docIn);
+                continue;
             }
             else
             {
