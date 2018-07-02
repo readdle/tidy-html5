@@ -1798,6 +1798,7 @@ int         tidyDocCleanAndRepair( TidyDocImpl* doc )
     Bool tidyXmlTags = cfgBool( doc, TidyXmlTags );
     Bool wantNameAttr = cfgBool( doc, TidyAnchorAsName );
     Bool mergeEmphasis = cfgBool( doc, TidyMergeEmphasis );
+    Bool dropWord2KSections = cfgBool( doc, TidyDropWord2000Sections );
     Node* node;
 
 #if !defined(NDEBUG) && defined(_MSC_VER)
@@ -1818,6 +1819,10 @@ int         tidyDocCleanAndRepair( TidyDocImpl* doc )
     /* replaces i by em and b by strong */
     if ( logical )
         TY_(EmFromI)( doc, &doc->root );
+
+    /* prune Word2000's '<![if ...]>', '<![if !vml]>' */
+    if ( dropWord2KSections && TY_(IsWord2000)(doc) )
+        TY_(DropSections)( doc, &doc->root );
 
     if ( word2K && TY_(IsWord2000)(doc) )
     {

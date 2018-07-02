@@ -130,6 +130,8 @@ typedef enum
   TidyJoinStyles,      /**< Join multiple style attributes */
   TidyEscapeCdata,     /**< Replace <![CDATA[]]> sections with escaped text */
 
+  TidyDropWord2000Sections, /**< Cleaning for Word2000 '<![if..]>', '<![if !vml]>' sections */
+
 #if SUPPORT_ASIAN_ENCODINGS
   TidyLanguage,        /**< Language property: not used for anything yet */
   TidyNCR,             /**< Allow numeric character references */
