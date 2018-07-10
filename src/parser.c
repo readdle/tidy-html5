@@ -4213,7 +4213,13 @@ void TY_(ParseBody)(TidyDocImpl* doc, Node *body, GetTokenMode mode)
                 TY_(ReportError)(doc, body, node, INSERTING_TAG);
 
             TY_(InsertNodeAtEnd)(body, node);
-            ParseTag(doc, node, mode);
+
+            /* Preserve white spaces in case text node has 'white-space' style set to 'pre' */
+            if ( cfgBool(doc, TidyPreserveSpaces) && (nodeIsP(node) || nodeIsSPAN(node) || nodeIsDIV(node)) )
+                ParseTag(doc, node, Preformatted);
+            else
+                ParseTag(doc, node, mode);
+
             continue;
         }
 
