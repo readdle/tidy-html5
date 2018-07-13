@@ -174,6 +174,9 @@ typedef enum
   TidySkipNested,          /**< Skip nested tags in script and style CDATA */
   TidyStrictTagsAttr,      /**< Ensure tags and attributes match output HTML version */
   TidyEscapeScripts,       /**< Escape items that look like closing tags in script tags */
+
+  TidyPreserveSpaces,      /**< Preserve white spaces and new line characters */
+  
   N_TIDY_OPTIONS           /**< Must be last */
 } TidyOptionId;
 
