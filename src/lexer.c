@@ -3135,8 +3135,9 @@ static Node* GetTokenFromStream( TidyDocImpl* doc, GetTokenMode mode )
 
                 badcomment++;
 
-                if ( cfgBool(doc, TidyFixComments) )
-                    lexer->lexbuf[lexer->lexsize - 2] = '=';
+                // Commented out because comments are fixed by adding 'commentSymbol'.
+                //if ( cfgBool(doc, TidyFixComments) )
+                //    lexer->lexbuf[lexer->lexsize - 2] = '=';
 
                 /* if '-' then look for '>' to end the comment */
                 if (c == lexer->commentSymbol)
@@ -3146,7 +3147,8 @@ static Node* GetTokenFromStream( TidyDocImpl* doc, GetTokenMode mode )
                 }
 
                 /* otherwise continue to look for --> */
-                lexer->lexbuf[lexer->lexsize - 1] = '=';
+                // Commented out because comments are fixed by adding 'commentSymbol'.
+                //lexer->lexbuf[lexer->lexsize - 1] = '=';
 
                 /* http://tidy.sf.net/bug/1266647 */
                 TY_(AddCharToLexer)(lexer, c);
