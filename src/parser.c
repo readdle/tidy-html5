@@ -3235,6 +3235,9 @@ void TY_(ParsePre)( TidyDocImpl* doc, Node *pre, GetTokenMode ARG_UNUSED(mode) )
         /* strip unexpected tags */
         if ( !PreContent(doc, node) )
         {
+            if (cfgBool(doc, TidyAllowEverythingInPre) && nodeIsDIV(node)) {
+                continue;
+            }
             Node *newnode;
 
             /* fix for http://tidy.sf.net/bug/772205 */
