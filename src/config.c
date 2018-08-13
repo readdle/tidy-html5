@@ -326,7 +326,7 @@ static const TidyOptionImpl option_defs[] =
   { TidyStrictTagsAttr,          MU, "strict-tags-attributes",      BL, no,              ParseBool,         boolPicks       }, /* 20160209 - Issue #350 */
   { TidyEscapeScripts,           PP, "escape-scripts",              BL, yes,             ParseBool,         boolPicks       }, /* 20160227 - Issue #348 */
   { TidyPreserveSpaces,          PP, "preserve-spaces",             BL, no,              ParseBool,         boolPicks       },
-  { TidyAllowEverythingInPre,    PP, "preserve-spaces",             BL, no,              ParseBool,         boolPicks       },
+  { TidyAllowEverythingInPre,    PP, "complex-pre",       	        BL, no,              ParseBool,         boolPicks       },
   { N_TIDY_OPTIONS,              XX, NULL,                          XY, 0,               NULL,              NULL            }
 };
 
