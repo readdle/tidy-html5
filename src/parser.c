@@ -1408,10 +1408,16 @@ void TY_(ParseBlock)( TidyDocImpl* doc, Node *element, GetTokenMode mode)
             if (node->implicit)
                 TY_(ReportError)(doc, element, node, INSERTING_TAG );
 
-            /* Issue #212 - WHY is this hard coded to 'IgnoreWhitespace' while an 
-               effort has been made above to set a 'MixedContent' mode in some cases?
-               WHY IS THE 'mode' VARIABLE NOT USED HERE???? */
-            ParseTag( doc, node, IgnoreWhitespace /*MixedContent*/ );
+            if ( nodeIsPRE(node) || IsPreDescendant(node)) {
+                ParseTag( doc, node, Preformatted );
+            }
+            else {
+                /* Issue #212 - WHY is this hard coded to 'IgnoreWhitespace' while an
+                 effort has been made above to set a 'MixedContent' mode in some cases?
+                 WHY IS THE 'mode' VARIABLE NOT USED HERE???? */
+                
+                ParseTag( doc, node, mode /*MixedContent*/ );
+            }
             continue;
         }
 
@@ -3235,6 +3241,9 @@ void TY_(ParsePre)( TidyDocImpl* doc, Node *pre, GetTokenMode ARG_UNUSED(mode) )
         /* strip unexpected tags */
         if ( !PreContent(doc, node) )
         {
+            if (cfgBool(doc, TidyAllowEverythingInPre) && nodeIsDIV(node)) {
+                continue;
+            }
             Node *newnode;
 
             /* fix for http://tidy.sf.net/bug/772205 */

@@ -176,7 +176,7 @@ typedef enum
   TidyEscapeScripts,       /**< Escape items that look like closing tags in script tags */
 
   TidyPreserveSpaces,      /**< Preserve white spaces and new line characters */
-  
+  TidyAllowEverythingInPre,/** Allow divs in pre block */
   N_TIDY_OPTIONS           /**< Must be last */
 } TidyOptionId;
 
