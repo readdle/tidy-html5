@@ -3029,7 +3029,11 @@ static Node* GetTokenFromStream( TidyDocImpl* doc, GetTokenMode mode )
                     attributes = ParseAttrs( doc, &isempty );
                 }
 
-                if (isempty)
+                /* vs.savchenko@readdle.com: */
+                /* Do not handle <a href="" /> as a StartEndTag */
+                /* otherwise in situation like <a href="" />some text</a> */
+                /* content will be put outside of the <a> node */
+                if (isempty && !nodeIsA(lexer->token))
                     lexer->token->type = StartEndTag;
 
                 lexer->token->attributes = attributes;
