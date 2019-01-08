@@ -2711,8 +2711,14 @@ void TY_(ParseRow)(TidyDocImpl* doc, Node *row, GetTokenMode ARG_UNUSED(mode))
         /* discard unexpected <table> element */
         if ( nodeIsTABLE(node) )
         {
-            TY_(ReportError)(doc, row, node, DISCARDING_UNEXPECTED);
-            TY_(FreeNode)( doc, node);
+            /* <table> elements are not allowed in <tr>, however it is
+                used for layout purposes. It provides better result if
+                content is left as is. See SPX-6878.
+            */
+            /*TY_(ReportError)(doc, row, node, DISCARDING_UNEXPECTED);
+            TY_(FreeNode)( doc, node); */
+            TY_(InsertNodeAtEnd)(row, node);
+            ParseTag( doc, node, IgnoreWhitespace);
             continue;
         }
 
