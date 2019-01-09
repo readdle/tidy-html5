@@ -1724,7 +1724,11 @@ void TY_(DropSections)( TidyDocImpl* doc, Node* node )
         {
             /* prune up to matching endif */
             if ((TY_(tmbstrncmp)(lexer->lexbuf + node->start, "if", 2) == 0) &&
-                (TY_(tmbstrncmp)(lexer->lexbuf + node->start, "if !vml", 7) != 0)) /* #444394 - fix 13 Sep 01 */
+                (TY_(tmbstrncmp)(lexer->lexbuf + node->start, "if !vml", 7) != 0) && /* #444394 - fix 13 Sep 01 */
+                /* do not remove not mso content */
+                /* content between <![if !mso]> and <![endif]> must be left in place */
+                (TY_(tmbstrncmp)(lexer->lexbuf + node->start, "if !mso", 7) != 0)
+                )
             {
                 node = PruneSection( doc, node );
                 continue;
