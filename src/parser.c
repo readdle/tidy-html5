@@ -3651,7 +3651,12 @@ void TY_(ParseTitle)(TidyDocImpl* doc, Node *title, GetTokenMode ARG_UNUSED(mode
 
         /* pushback unexpected tokens */
         TY_(ReportError)(doc, title, node, MISSING_ENDTAG_BEFORE);
-        TY_(UngetToken)( doc );
+
+        /* Do not push back unexpected tokens it may produce bad side effects. */
+        /* Example: <template> token if pushed back will wrap whole <body> content. */
+        /* TY_(UngetToken)( doc ); */
+        TY_(FreeNode)( doc, node);
+
         TrimSpaces(doc, title);
         return;
     }
