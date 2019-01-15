@@ -3023,6 +3023,15 @@ static Node* GetTokenFromStream( TidyDocImpl* doc, GetTokenMode mode )
                 /* parse attributes, consuming closing ">" */
                 if (c != '>')
                 {
+                    if (lexer->token->element != NULL && !TY_(IsWhite)(c) && c != '/')
+                    {
+                        /* Element must have white space symbol after name */
+                        /* see https://www.w3.org/TR/html5/syntax.html#start-tags */
+                        TY_(UngetChar)(c, doc->docIn);
+                        TY_(FreeNode)( doc, lexer->token );
+                        continue;
+                    }
+
                     if (c == '/')
                         TY_(UngetChar)(c, doc->docIn);
 
