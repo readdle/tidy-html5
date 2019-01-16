@@ -2124,6 +2124,29 @@ void TY_(ParseInline)( TidyDocImpl* doc, Node *element, GetTokenMode mode )
             }
         }
 
+        if ( nodeIsP(element) )
+        {
+            if ( nodeIsHR(node) )
+            {
+                /* Allow hr inside p. Most browsers do it right. */
+                /* Otherwise content of the p may be placed outside of p element. */
+                TY_(InsertNodeAtEnd)(element, node);
+                continue;
+            }
+        }
+
+        if ( nodeIsSPAN(element) )
+        {
+            /* Special behaviour for span, because it's often used instead of div container. */
+            /* This is wrong, but end result is better. */
+            if ( nodeIsP(node) )
+            {
+                TY_(InsertNodeAtEnd)(element, node);
+                TY_(PopInline)( doc, element );
+                ParseTag(doc, node, Preformatted);
+                continue;
+            }
+        }
 
         /* 
           if this is the end tag for an ancestor element
