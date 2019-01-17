@@ -2743,6 +2743,15 @@ void TY_(ParseRow)(TidyDocImpl* doc, Node *row, GetTokenMode ARG_UNUSED(mode))
 
         if (node->type != EndTag)
         {
+            if ( nodeIsBR(node) || nodeIsIMG(node) )
+            {
+                /* Do not touch inline content. */
+                /* It's often used for layout purposes. */
+                /* see SPC-1944. */
+                TY_(InsertNodeAtEnd)(row, node);
+                continue;
+            }
+
             if ( nodeIsFORM(node) )
             {
                 TY_(UngetToken)( doc );
