@@ -16,3 +16,6 @@ temp*
 .DS_Store
 .idea
 *.old
+.build
+build-android-swift/obj
+build-android-swift/libs
