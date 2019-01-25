@@ -1701,6 +1701,9 @@ static Node* PruneSection( TidyDocImpl* doc, Node *node )
             if (TY_(tmbstrncmp)(lexer->lexbuf + node->start, "if", 2) == 0)
             {
                 node = PruneSection( doc, node );
+                if (node == NULL)
+                    return NULL;
+
                 continue;
             }
 
