@@ -30,6 +30,7 @@
  */
 #define showingBodyOnly(doc) (cfgAutoBool(doc,TidyBodyOnly) == TidyYesState) ? yes : no
 
+#define TIDY_STACK_GUARD 500
 
 Bool TY_(CheckNodeIntegrity)(Node *node)
 {
@@ -2139,7 +2140,10 @@ void TY_(ParseInline)( TidyDocImpl* doc, Node *element, GetTokenMode mode )
         {
             /* Special behaviour for span, because it's often used instead of div container. */
             /* This is wrong, but end result is better. */
-            if ( nodeIsP(node) )
+
+            /* Avoids stack overflow. */
+            /* Interrupt inline element parsing if there are too many calls on the stack. */
+            if ( nodeIsP(node) && node->type != EndTag && lexer->istacksize < TIDY_STACK_GUARD)
             {
                 TY_(InsertNodeAtEnd)(element, node);
                 TY_(PopInline)( doc, element );
