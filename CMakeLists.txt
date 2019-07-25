@@ -198,10 +198,10 @@ if (BUILD_SHARED_LIB)
     set_target_properties( ${name} PROPERTIES
                                    VERSION   ${LIBTIDY_VERSION}
                                    SOVERSION ${TIDY_MAJOR_VERSION} )
-    set_target_properties( ${name} PROPERTIES 
-                                   COMPILE_FLAGS "-DBUILD_SHARED_LIB" )
-    set_target_properties( ${name} PROPERTIES 
-                                   COMPILE_FLAGS "-DBUILDING_SHARED_LIB" )
+    target_compile_definitions(${name}
+                                PRIVATE
+                                    BUILD_SHARED_LIB
+                                    BUILDING_SHARED_LIB )
     install(TARGETS ${name}
         RUNTIME DESTINATION ${BIN_INSTALL_DIR}
         ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
@@ -222,8 +222,10 @@ if (MSVC)
     set_target_properties( ${name} PROPERTIES DEBUG_POSTFIX d )
 endif ()
 if (NOT TIDY_CONSOLE_SHARED)
-    set_target_properties( ${name} PROPERTIES 
-                                   COMPILE_FLAGS "-DTIDY_STATIC" )
+    target_compile_definitions(${name}
+                                PRIVATE
+                                    TIDY_STATIC
+                                    )
 endif ()
 install (TARGETS ${name} DESTINATION bin)
 
