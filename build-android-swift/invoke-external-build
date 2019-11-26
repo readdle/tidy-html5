@@ -6,18 +6,23 @@ pushd "$(realpath $(dirname $0))"
     # TODO: optimize headers layout and remove this hack
     rsync -t -r ../include/ "${SWIFT_PM_EXTERNAL_INCLUDE}/tidy"
 
-    if (( $NDK_DEBUG == 1 ))
-    then
-        rsync -tm \
-            --include='*.so' \
-            --include='*/' \
-            --exclude='*' \
-            -r "obj/local/armeabi-v7a" "${SWIFT_PM_EXTERNAL_LIBS}" 
-    else
-        rsync -tm \
-            --include='*.so' \
-            --include='*/' \
-            --exclude='*' \
-            -r "libs/armeabi-v7a" "${SWIFT_PM_EXTERNAL_LIBS}"
-    fi
+    archs="armeabi-v7a arm64-v8a x86 x86_64"
+    for arch in $archs ; do
+        TARGET_ARCH_ABI=$arch
+        if (( $NDK_DEBUG == 1 ))
+        then
+            rsync -tm \
+                --include='*.so' \
+                --include='*/' \
+                --exclude='*' \
+                -r "obj/local/$TARGET_ARCH_ABI" "${SWIFT_PM_EXTERNAL_LIBS}" 
+        else
+            rsync -tm \
+                --include='*.so' \
+                --include='*/' \
+                --exclude='*' \
+                -r "libs/$TARGET_ARCH_ABI" "${SWIFT_PM_EXTERNAL_LIBS}"
+        fi
+    done
+
 popd

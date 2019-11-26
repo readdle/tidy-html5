@@ -1974,6 +1974,11 @@ void TY_(ParseInline)( TidyDocImpl* doc, Node *element, GetTokenMode mode )
             {
                 TY_(ReportError)(doc, element, node, NON_MATCHING_ENDTAG );
                 TY_(FreeNode)( doc, node);
+
+                /* allow <h><h>Header</h></h> cases */
+                if (!element->implicit && !element->content) {
+                    continue;
+                }
             }
             else
             {
