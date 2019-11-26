@@ -85,6 +85,14 @@ if(WIN32 AND MSVC)
     # set( NOMINMAX 1 )
     # to distinguish between debug and release lib in windows
     set( CMAKE_DEBUG_POSTFIX "d" ) # little effect in unix
+
+    foreach(FLAG_TYPE EXE MODULE SHARED)
+        foreach(CONFIG_TYPE DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
+            string(REPLACE "INCREMENTAL" "INCREMENTAL:NO" FLAG_TMP "${CMAKE_${FLAG_TYPE}_LINKER_FLAGS_${CONFIG_TYPE}}")
+            set(CMAKE_${FLAG_TYPE}_LINKER_FLAGS_${CONFIG_TYPE} "${FLAG_TMP}" CACHE STRING "Overriding default ${CONFIG_TYPE} ${FLAG_TYPE} linker flags." FORCE)
+            message(STATUS "Overriding default ${CONFIG_TYPE} ${FLAG_TYPE} linker flags")
+        endforeach()
+    endforeach()
 else()
     # add any gcc flags
 endif()
