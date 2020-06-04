@@ -3061,6 +3061,18 @@ void TY_(ParseColGroup)(TidyDocImpl* doc, Node *colgroup, GetTokenMode ARG_UNUSE
     }
 }
 
+static Bool DiscardBlockInlineEndTag( TidyDocImpl* doc, Node* table, Node* node )
+{
+    if ( TY_(nodeHasCM)(node, CM_TABLE|CM_ROW) ||
+        TY_(nodeHasCM)(node, CM_BLOCK|CM_INLINE) )
+    {
+        TY_(ReportError)(doc, table, node, DISCARDING_UNEXPECTED);
+        TY_(FreeNode)(doc, node);
+        return yes;
+    }
+    return no;
+}
+
 void TY_(ParseTableTag)(TidyDocImpl* doc, Node *table, GetTokenMode ARG_UNUSED(mode))
 {
 #if !defined(NDEBUG) && defined(_MSC_VER)
@@ -3160,13 +3172,11 @@ void TY_(ParseTableTag)(TidyDocImpl* doc, Node *table, GetTokenMode ARG_UNUSED(m
                 continue;
             }
 
-            /* best to discard unexpected block/inline end tags */
-            if ( TY_(nodeHasCM)(node, CM_TABLE|CM_ROW) ||
-                 TY_(nodeHasCM)(node, CM_BLOCK|CM_INLINE) )
-            {
-                TY_(ReportError)(doc, table, node, DISCARDING_UNEXPECTED);
-                TY_(FreeNode)( doc, node);
-                continue;
+            /* If table is implicit, let's check parent element before discarding closing tag. */
+            if (!table->implicit) {
+                /* best to discard unexpected block/inline end tags */
+                if ( DiscardBlockInlineEndTag(doc, table, node) )
+                    continue;
             }
 
             for ( parent = table->parent;
@@ -3185,6 +3195,10 @@ void TY_(ParseTableTag)(TidyDocImpl* doc, Node *table, GetTokenMode ARG_UNUSED(m
                     return;
                 }
             }
+
+            /* best to discard unexpected block/inline end tags */
+            if ( DiscardBlockInlineEndTag(doc, table, node) )
+                continue;
         }
 
         if (!(node->tag->model & CM_TABLE))
