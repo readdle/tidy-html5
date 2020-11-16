@@ -85,6 +85,17 @@ if(WIN32 AND MSVC)
     # set( NOMINMAX 1 )
     # to distinguish between debug and release lib in windows
     set( CMAKE_DEBUG_POSTFIX "d" ) # little effect in unix
+
+    foreach(FLAG_TYPE EXE MODULE SHARED)
+        foreach(CONFIG_TYPE DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
+            string(REPLACE "INCREMENTAL:YES" "INCREMENTAL:NO" FLAG_TMP "${CMAKE_${FLAG_TYPE}_LINKER_FLAGS_${CONFIG_TYPE}}")
+            string(REPLACE "INCREMENTAL:NO" "I_N_C_R_E_M_E_N_T_A_L:NO" FLAG_TMP "${FLAG_TMP}")
+            string(REPLACE "INCREMENTAL" "INCREMENTAL:NO" FLAG_TMP "${FLAG_TMP}")
+            string(REPLACE "I_N_C_R_E_M_E_N_T_A_L:NO" "INCREMENTAL:NO" FLAG_TMP "${FLAG_TMP}")
+            set(CMAKE_${FLAG_TYPE}_LINKER_FLAGS_${CONFIG_TYPE} "${FLAG_TMP}" CACHE STRING "Overriding default ${CONFIG_TYPE} ${FLAG_TYPE} linker flags." FORCE)
+            message(STATUS "Overriding default ${CONFIG_TYPE} ${FLAG_TYPE} linker flags")
+        endforeach()
+    endforeach()
 else()
     # add any gcc flags
 endif()
@@ -198,10 +209,10 @@ if (BUILD_SHARED_LIB)
     set_target_properties( ${name} PROPERTIES
                                    VERSION   ${LIBTIDY_VERSION}
                                    SOVERSION ${TIDY_MAJOR_VERSION} )
-    set_target_properties( ${name} PROPERTIES 
-                                   COMPILE_FLAGS "-DBUILD_SHARED_LIB" )
-    set_target_properties( ${name} PROPERTIES 
-                                   COMPILE_FLAGS "-DBUILDING_SHARED_LIB" )
+    target_compile_definitions(${name}
+                                PRIVATE
+                                    BUILD_SHARED_LIB
+                                    BUILDING_SHARED_LIB )
     install(TARGETS ${name}
         RUNTIME DESTINATION ${BIN_INSTALL_DIR}
         ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
@@ -222,8 +233,10 @@ if (MSVC)
     set_target_properties( ${name} PROPERTIES DEBUG_POSTFIX d )
 endif ()
 if (NOT TIDY_CONSOLE_SHARED)
-    set_target_properties( ${name} PROPERTIES 
-                                   COMPILE_FLAGS "-DTIDY_STATIC" )
+    target_compile_definitions(${name}
+                                PRIVATE
+                                    TIDY_STATIC
+                                    )
 endif ()
 install (TARGETS ${name} DESTINATION bin)
 
