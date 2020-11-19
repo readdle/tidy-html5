@@ -41,6 +41,7 @@ set( LIB_TYPE STATIC )  # set default message
 option( BUILD_SHARED_LIB "Set OFF to NOT build shared library"    ON  )
 option( BUILD_TAB2SPACE  "Set ON to build utility app, tab2space" OFF )
 option( BUILD_SAMPLE_CODE "Set ON to build the sample code"       OFF )
+option( BUILD_EXECUTABLE "Set ON to build main executable"        OFF )
 if (NOT MAN_INSTALL_DIR)
     set(MAN_INSTALL_DIR share/man/man1)
 endif ()
@@ -225,20 +226,24 @@ endif ()
 
 ##########################################################
 ### main executable - linked with STATIC/SHARED library
-set(name ${LIB_NAME})
-set ( BINDIR console )
-add_executable( ${name} ${BINDIR}/tidy.c )
-target_link_libraries( ${name} ${add_LIBS} )
-if (MSVC)
-    set_target_properties( ${name} PROPERTIES DEBUG_POSTFIX d )
-endif ()
-if (NOT TIDY_CONSOLE_SHARED)
-    target_compile_definitions(${name}
-                                PRIVATE
-                                    TIDY_STATIC
-                                    )
-endif ()
-install (TARGETS ${name} DESTINATION bin)
+if (BUILD_EXECUTABLE)
+    set(name ${LIB_NAME})
+    set ( BINDIR console )
+    add_executable( ${name} ${BINDIR}/tidy.c )
+    target_link_libraries( ${name} ${add_LIBS} )
+    if (MSVC)
+        set_target_properties( ${name} PROPERTIES DEBUG_POSTFIX d )
+    endif ()
+    if (NOT TIDY_CONSOLE_SHARED)
+        target_compile_definitions(${name}
+                                    PRIVATE
+                                        TIDY_STATIC
+                                        )
+    endif ()
+    install (TARGETS ${name} DESTINATION bin)
+else()
+    message(STATUS "*** Not building executable")
+endif()
 
 if (BUILD_TAB2SPACE)
     set(name tab2space)
