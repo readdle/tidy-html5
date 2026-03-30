@@ -1,7 +1,7 @@
 #ifndef __HTTPIO_H__
 #define __HTTPIO_H__
 
-#include "platform.h"
+#include "tidyplatform.h"
 #include "tidy.h"
 
 #ifdef WIN32

@@ -113,7 +113,7 @@ add_definitions ( -DLIBTIDY_VERSION="${LIBTIDY_VERSION}" )
 add_definitions ( -DRELEASE_DATE="${tidy_YEAR}/${tidy_MONTH}/${tidy_DAY}" )
 ### add_definitions ( -DRC_NUMBER="MinGW" )
 
-# Issue #188 - Support user items in platform.h
+# Issue #188 - Support user items in tidyplatform.h
 if (TIDY_CONFIG_FILE)
     add_definitions( -DTIDY_CONFIG_FILE="${TIDY_CONFIG_FILE}" )
 endif ()
@@ -152,11 +152,6 @@ set ( CFILES
 set ( HFILES
         ${INCDIR}/tidyplatform.h ${INCDIR}/tidy.h         ${INCDIR}/tidyenum.h
         ${INCDIR}/tidybuffio.h )
-
-option (TIDY_COMPAT_HEADERS "If set to ON, compatability headers are included" OFF)
-if (TIDY_COMPAT_HEADERS)
-    set ( HFILES ${HFILES}      ${INCDIR}/buffio.h        ${INCDIR}/platform.h )
-endif ()
 
 set ( LIBHFILES
         ${SRCDIR}/access.h       ${SRCDIR}/attrs.h        ${SRCDIR}/attrdict.h ${SRCDIR}/charsets.h
